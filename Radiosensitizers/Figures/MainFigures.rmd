@@ -1,0 +1,1317 @@
+# manuscript-code
+Code for the manuscript: High-throughput drug screening identifies BCL-xL targeting as a potent strategy for radiosensitization in rhabdomyosarcoma tumoroids 
+
+---
+title: "RMS_EBRT_Github"
+author: "Se Whee Sammy Park"
+date: "2025-04-29"
+output: html_document
+---
+
+High-throughput drug screening identifies BCL-xL targeting as a potent strategy for radiosensitization in rhabdomyosarcoma tumoroids: Main Figures
+
+# Load Packages
+Load all required package
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(ggrepel)
+library(scales)
+library(RColorBrewer)
+library(data.table)
+library(reshape2)
+library(plyr)
+library(rstatix)
+library(ComplexHeatmap)
+library(circlize)
+library(drc)
+library(readxl)
+library(readr)
+library(tidyr)
+library(stringr)
+library(grid)
+library(gridExtra)
+library(ggpattern)
+library(synergyfinder)
+```
+
+# Figure 2
+## Figure 2A
+Scatterplot of DSS between Karolinska Institue vs Princess Maxima Centrum
+```{r, FIG 2A}
+setwd()
+
+# Choose and merge data sets
+df_KI <- read.table("FIG_2A_RMS_DrugScreen_KI.csv",sep=",", header = TRUE)
+df_PMC <- read.table("FIG_2A_RMS_DrugScreen_PMC.csv",sep=",", header = TRUE)
+df_merge <- merge(df_KI,df_PMC,by="Drug_Name")
+
+# Plot a scatter plot - RMS006
+ggscatter(df_merge, x = "RMS006", y = "RMS006_KI",
+          add = "reg.line",  # Add regression line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE ) + # Add confidence interval
+  stat_cor(method = "spearman", label.x = 1, label.y = 40) +
+  geom_text_repel(data = subset(df_merge,RMS006_KI > 30), 
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df_merge, RMS006 > 30 & RMS006_KI < 30),
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  labs(x="RMS006_EARLY", y="RMS006_LATE") 
+
+# Save plot - RMS006
+ggsave("FIG_2A_Spearman_correlation_RMS006_4_4.pdf", width = 4, height = 4, dpi = 600)
+
+# Plot a scatter plot - RMS102
+ggscatter(df_merge, x = "RMS102", y = "RMS102_KI",
+          add = "reg.line",  # Add regression line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE ) + # Add confidence interval
+  stat_cor(method = "spearman", label.x = 1, label.y = 40) +
+  geom_text_repel(data = subset(df_merge,RMS102_SP > 30), 
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df_merge, RMS102 > 30 & RMS102_SP < 30),
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  labs(x="RMS102_EARLY", y="RMS102_LATE") 
+
+# Save plot - RMS102
+ggsave("FIG_2A_Spearman_correlation_RMS102_4_4.pdf", width = 4, height = 4, dpi = 600)
+
+# Plot a scatterplot - RMS410
+ggscatter(df_merge, x = "RMS410", y = "RMS410_KI",
+          add = "reg.line",  # Add regression line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE ) + # Add confidence interval
+  stat_cor(method = "spearman", label.x = 1, label.y = 40) +
+  geom_text_repel(data = subset(df_merge,RMS410_SP > 30), 
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df_merge, RMS410 > 30 & RMS410_SP < 30),
+                  aes(label = paste0(Drug_Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  labs(x="RMS410_EARLY", y="RMS410_LATE") 
+
+# Save plot - RMS410
+ggsave("FIG_2A_Spearman_correlation_RMS410_4_4.pdf", width = 4, height = 4, dpi = 600)
+```
+
+## Figure 2B
+Drug DSS comparison between RMS tumoroids and BM
+```{r, FIG 2B}
+setwd()
+
+# Choose data 
+df_KI  <- read.table("FIG_2A_RMS_DrugScreen_KI.csv",sep=",", header = TRUE)
+
+# Remove outlier drug - Everolimus
+df_KI <- subset(df_KI,Drug_Name != "Everolimus") #Everolimus drug curves not reliable
+
+# Reannotate the data frame row and columns
+rownames(df_KI) <- df_KI[,1]
+df_KI_small <- df_KI[1:20,]
+df_KI_m <- as.matrix(df_KI[, 6:15])
+df_KI_m_small <- df_KI_m[1:20,]
+anno = anno_mark(at = c(1:20), labels = df_KI_small$Mechanism, which = "row")
+column_ha = HeatmapAnnotation(foo = c(0,0,0,0,0,1,1,1,1,1) )
+
+# Plot a heatmap
+pdf("FIG_2B_ComplexHeatmap_Top20_KI_drugs_noEvero.pdf", width = 8.5, height = 8)
+ht <- Heatmap(df_KI_m_small,
+              cluster_rows=FALSE,
+              cluster_columns=FALSE,
+              top_annotation = column_ha,
+              col=colorRamp2(c(0, 15, 30),c("blue", "white", "red")),
+              heatmap_legend_param = list(
+                legend_direction = "horizontal", 
+                legend_width = unit(5, "cm")
+              )
+)+
+  rowAnnotation(mark = anno)
+
+draw(ht, auto_adjust = FALSE,heatmap_legend_side = "bottom")
+dev.off()
+```
+
+## Figure 2C 
+Drug target DSS comparison between RMS tumoroids and BM
+```{r, FIG 2C}
+setwd()
+
+# Choose data
+df <- read.table("FIG_2C_RMS_drugScreen_geneCentric.txt", header = TRUE)
+
+# Reannotate df
+head(df)
+df$FIMM_ID <- NULL
+df$Class_Explained <- NULL
+df$Clinical_Phase <- NULL
+df$Ave.RMS <- NULL
+df$Ave.BM <- NULL
+df$Diff <- NULL
+df$RMS.SD <- NULL
+df2 <- df
+
+# Wilcoxon signed-rank test
+df2$wilcox_p <- apply(df2[, 4:13], 1, function(x) wilcox.test(x[1:5], x[6:10])$p.value)
+write.csv(df2, "RMS_drugScreen_geneCentric_wilcoxon.csv")
+
+# Rearrage and reannotate dataframe
+long <- melt(df, id.vars = c("Drug_Name", "Gene_Targeted", "Mechanism"))
+long$samples <- long$variable
+long$samples <- as.character(long$samples)
+long$samples <- removeNumbers(long$samples)
+long$Gene_Targeted <- factor(long$Gene_Targeted, levels=c('PLK1', 'BCL2L1', 'MDM2', 'MTOR',"KIF11",
+                                                          "CDH16","HMGCR","TP53","PIK3CA","PIK3CG",
+                                                          "IGF1R","AURKA","FKBP1A","DHODH","FNTA",
+                                                          "AURKC","ESR1","ESR2","AKT1","PRKACA"))
+long$Gene_Targeted <- fct_rev(long$Gene_Targeted)
+long  <- na.omit(long)
+my_comparisons <- list( c("RMS", "BM.") )
+
+# Plot a boxplot 
+ggplot(long, aes(x=Gene_Targeted, y=value, fill = samples)) + 
+  geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+  scale_fill_brewer(palette="Dark2")+
+  geom_point(color="black",size=0.6, alpha=0.9, position=position_jitterdodge(dodge.width=1.0,
+                                                                              jitter.width = 0.1)) +
+  stat_compare_means(method = "wilcox.test", paired=FALSE, label.x = 35, label = "p.signif") +
+  
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position="bottom",
+        panel.background = element_rect(fill = 'white')) +
+  coord_flip()
+
+# Save plot
+ggsave(filename = "FIG_2C_GeneCentric_Boxplot_Top20.pdf", width = 3, height = 4, units = "in", device='pdf')
+```
+
+# Figure 3
+## Figure 3A
+Scatterplot for DSS with and without irradiation - RMS006
+```{r, FIG 3A}
+setwd()
+
+# Choose data
+df <- read.table("FIG_3A_RMS_EBRT_screen_and_BM.csv",sep=",", header = TRUE)
+
+# Plot a scatterplot - RMS006
+ggscatter(df, x = "RMS006", y = "RMS006_EBRT",
+          add = "reg.line",  # Add regression line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE ) + # Add confidence interval
+  stat_cor(method = "spearman", label.x = 1, label.y = 40) +
+  geom_text_repel(data = subset(df,RMS006_EBRT-RMS006 > 15), 
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df, RMS006-RMS006_EBRT > 10),
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = -2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df, RMS006 > 40),
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = -2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  labs(x="RMS006", y="RMS006_EBRT") 
+
+# Save plot - RMS006
+ggsave(filename = paste0("FIG_3A_RMS006_X_Y_4_4.pdf"), width = 4, height = 4, units = "in", device='pdf')
+```
+
+## Figure 3B
+Scatterplot for DSS with and without irradiation - RMS410
+```{r, FIG 3B}
+setwd()
+
+# Choose data
+df <- read.table("FIG_3A_RMS_EBRT_screen_and_BM.csv",sep=",", header = TRUE)
+
+# Plot a scatterplot - RMS410
+ggscatter(df, x = "RMS410", y = "RMS410_EBRT",
+          add = "reg.line",  # Add regression line
+          add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+          conf.int = TRUE ) + # Add confidence interval
+  stat_cor(method = "spearman", label.x = 1, label.y = 40) +
+  geom_text_repel(data = subset(df,RMS410_EBRT-RMS410 > 7), 
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = 2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df, RMS410-RMS410_EBRT > 7),
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = -2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  geom_text_repel(data = subset(df, RMS410 > 35),
+                  aes(label = paste0(Drug.Name)) ,
+                  hjust = -2,
+                  nudge_x = 2,
+                  direction = "y",
+                  fontface = "bold",
+                  size = 4) +
+  labs(x="RMS410", y="RMS410_EBRT") 
+
+# Save plot - RMS410
+ggsave(filename = paste0("FIG_3A_RMS410_X_Y_7_7_4_4.pdf"), width = 4, height = 4, units = "in", device='pdf')
+```
+
+## Figure 3C
+Top radiosensitizers and radioprotectors
+```{r, FIG 3C}
+setwd()
+
+# Choose data
+df <- read.table("FIG_3C_RMS_EBRT_screen_dDSS.csv",sep=",", header = TRUE)
+
+# Reannotate the dataframe
+df$FIMM.ID <- NULL
+df$Clinical.Phase <- NULL
+df$Class.Explained <- NULL
+df$Clinical.Phase <- NULL
+
+# Define the top ten radiosensitizing and radioprotecting compounds
+df_top <- df[order(-df$average),] 
+df_top10 <- df_top[1:10,]
+df_bottom <- df[order(df$average),] 
+df_bottom10 <- df_bottom[1:10,]
+
+# Merge the top hits
+df_merge <- rbind(df_top10,df_bottom10)
+
+# Order data by drug name
+rownames(df_order) <- df_order$Drug.Name
+
+# Rearrange the data
+df_merge_long <- melt(setDT(df_merge), id.vars = c("Drug.Name","Mechanism","average"), variable.name = "Viability")
+
+# Calculate the mean and SD of each Drug
+df_merge_long_summary <- ddply(df_merge_long, c("Drug.Name","Mechanism","average"), summarise,
+                               mean = mean(value), sd = sd(value))
+df_merge_long_summary$mean <- as.numeric(df_merge_long_summary$mean)
+df_merge_long_summary$sd <- as.numeric(df_merge_long_summary$sd)
+df_merge_long_summary$Drug.Name <- reorder(df_merge_long_summary$Drug.Name, df_merge_long_summary$average)
+df_merge_long_summary <- df_merge_long_summary[order(-df_merge_long_summary$average),] 
+
+# Plot barplot
+ggplot(df_merge_long_summary, aes(x=average,y=Drug.Name, fill=Mechanism))+
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(xmin=mean-sd, xmax=mean+sd), width=.2,
+                position=position_dodge(0.05))+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0),
+        panel.background = element_rect(fill = 'white'))+
+  coord_flip()
+
+# Save plot
+ggsave(filename = "FIG_3C_RMS_EBRT_dDSS_barchart_topBottom10_combined.pdf", width = 8, height = 8, units = "in", device='pdf')
+```
+
+## Figure 3D
+Average dose response curves - BCL-xL inhibitors
+```{r, FIG 3D}
+setwd()
+
+# Choose drug
+drug <-"WEHI-539"
+drug <-"A-1331852"
+drug <-"Navitoclax"
+drug <-"A-1155463"
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_006 <- read.table("FIG_3D_FO5A_RMS006_DSRT.csv",sep=",", header = TRUE)
+df_006_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS006_DSRT.csv",sep=",", header = TRUE)
+df_006_drug <- subset(df_006, DRUG_NAME == drug)
+df_006_EBRT_drug <- subset(df_006_EBRT, DRUG_NAME == drug)
+df_006_drug$EBRT <- "no"
+df_006_EBRT_drug$EBRT <- "yes"
+df_006_drug$RMS <- "006"
+df_006_EBRT_drug$RMS <- "006"
+EC50_006 <- df_006_drug$EC50
+EC50_006_EBRT <- df_006_EBRT_drug$EC50
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_102 <- read.table("FIG_3D_FO5A_RMS102_DSRT.csv",sep=",", header = TRUE)
+df_102_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS102_DSRT.csv",sep=",", header = TRUE)
+df_102_drug <- subset(df_102, DRUG_NAME == drug)
+df_102_EBRT_drug <- subset(df_102_EBRT, DRUG_NAME == drug)
+df_102_drug$EBRT <- "no"
+df_102_EBRT_drug$EBRT <- "yes"
+df_102_drug$RMS <- "102"
+df_102_EBRT_drug$RMS <- "102"
+EC50_102 <- df_102_drug$EC50
+EC50_102_EBRT <- df_102_EBRT_drug$EC50
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_410 <- read.table("FIG_3D_FO5A_RMS410_DSRT.csv",sep=",", header = TRUE)
+df_410_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS410_DSRT.csv",sep=",", header = TRUE)
+df_410_drug <- subset(df_410, DRUG_NAME == drug)
+df_410_EBRT_drug <- subset(df_410_EBRT, DRUG_NAME == drug)
+df_410_drug$EBRT <- "no"
+df_410_EBRT_drug$EBRT <- "yes"
+df_410_drug$RMS <- "410"
+df_410_EBRT_drug$RMS <- "410"
+EC50_410 <- df_410_drug$EC50
+EC50_410_EBRT <- df_410_EBRT_drug$EC50
+
+# Choose a reference dataframe
+df_drug <- df_006_drug
+
+# Combine data
+comb <- rbind(df_006_drug,df_102_drug,df_410_drug,df_006_EBRT_drug,df_102_EBRT_drug,df_410_EBRT_drug)
+
+# Rearrange dataframe
+long_comb <- melt(setDT(comb), id.vars = c("ID","DRUG_NAME","ANALYSIS_NAME","EC50","SLOPE","MAX","MIN",
+                                           "Min.Conc.tested","Max.Conc.tested","EC50_std_error","EBRT","RMS"), variable.name = "Viability")
+
+# Add the drug concentration
+long_comb$concentration <- c(df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000)
+
+# Calculate the mean and SD for each drug
+long_comb_summary <- ddply(long_comb, c("concentration","EBRT", "Viability"), summarise,
+                           mean = mean(value), sd = sd(value))
+
+# Plot a dose response curve
+ggplot(data = long_comb_summary, aes(x = concentration, y = mean, group=EBRT, color = EBRT)) + 
+  geom_point(size = 3) +
+  geom_line() +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+                position=position_dodge(0.05))+
+  scale_x_log10(labels = scales::comma) +
+  scale_color_manual(values=c("yes"="blue","no"="red"))+
+  ylim(-30, 130) +
+  
+  theme(axis.line = element_line(colour = "black"),legend.position="none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background = element_rect(fill = 'white'))
+
+
+# Save the plot
+ggsave(filename = paste0("FIG_3D_Drug_curve_EBRT_",drug,"_three_combined.pdf"), width = 3, height = 3, units = "in", device='pdf')
+```
+
+
+## Figure 3E
+Average dose response curves - PLK1 inhibitors 
+```{r, FIG 3E}
+setwd()
+
+# Choose drug
+drug <-"GSK-461364"
+drug <-"BI 2536"
+drug <-"Volasertib"
+drug <-"Methotrexate"
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_006 <- read.table("FIG_3D_FO5A_RMS006_DSRT.csv",sep=",", header = TRUE)
+df_006_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS006_DSRT.csv",sep=",", header = TRUE)
+df_006_drug <- subset(df_006, DRUG_NAME == drug)
+df_006_EBRT_drug <- subset(df_006_EBRT, DRUG_NAME == drug)
+df_006_drug$EBRT <- "no"
+df_006_EBRT_drug$EBRT <- "yes"
+df_006_drug$RMS <- "006"
+df_006_EBRT_drug$RMS <- "006"
+EC50_006 <- df_006_drug$EC50
+EC50_006_EBRT <- df_006_EBRT_drug$EC50
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_102 <- read.table("FIG_3D_FO5A_RMS102_DSRT.csv",sep=",", header = TRUE)
+df_102_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS102_DSRT.csv",sep=",", header = TRUE)
+df_102_drug <- subset(df_102, DRUG_NAME == drug)
+df_102_EBRT_drug <- subset(df_102_EBRT, DRUG_NAME == drug)
+df_102_drug$EBRT <- "no"
+df_102_EBRT_drug$EBRT <- "yes"
+df_102_drug$RMS <- "102"
+df_102_EBRT_drug$RMS <- "102"
+EC50_102 <- df_102_drug$EC50
+EC50_102_EBRT <- df_102_EBRT_drug$EC50
+
+# Choose data referring to the drug of choice and annotate model, irradiation status and EC50
+df_410 <- read.table("FIG_3D_FO5A_RMS410_DSRT.csv",sep=",", header = TRUE)
+df_410_EBRT <- read.table("FIG_3D_FO5A_EBRT_RMS410_DSRT.csv",sep=",", header = TRUE)
+df_410_drug <- subset(df_410, DRUG_NAME == drug)
+df_410_EBRT_drug <- subset(df_410_EBRT, DRUG_NAME == drug)
+df_410_drug$EBRT <- "no"
+df_410_EBRT_drug$EBRT <- "yes"
+df_410_drug$RMS <- "410"
+df_410_EBRT_drug$RMS <- "410"
+EC50_410 <- df_410_drug$EC50
+EC50_410_EBRT <- df_410_EBRT_drug$EC50
+
+# Choose a reference dataframe
+df_drug <- df_006_drug
+
+# Combine data
+comb <- rbind(df_006_drug,df_102_drug,df_410_drug,df_006_EBRT_drug,df_102_EBRT_drug,df_410_EBRT_drug)
+
+# Rearrange dataframe
+long_comb <- melt(setDT(comb), id.vars = c("ID","DRUG_NAME","ANALYSIS_NAME","EC50","SLOPE","MAX","MIN",
+                                           "Min.Conc.tested","Max.Conc.tested","EC50_std_error","EBRT","RMS"), variable.name = "Viability")
+
+# Add the drug concentration
+long_comb$concentration <- c(df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000,df_drug$Min.Conc.tested*10000)
+
+# Calculate the mean and SD of each Drug
+long_comb_summary <- ddply(long_comb, c("concentration","EBRT", "Viability"), summarise,
+                           mean = mean(value), sd = sd(value))
+# Plot the dose reponse curve
+ggplot(data = long_comb_summary, aes(x = concentration, y = mean, group=EBRT, color = EBRT)) + 
+  geom_point(size = 3) +
+  geom_line() +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+                position=position_dodge(0.05))+
+  scale_x_log10(labels = scales::comma) +
+  scale_color_manual(values=c("yes"="blue","no"="red"))+
+  ylim(-30, 130) +
+  
+  theme(axis.line = element_line(colour = "black"),legend.position="none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background = element_rect(fill = 'white'))
+
+# Save the plot
+ggsave(filename = paste0("FIG_3E_Drug_curve_EBRT_",drug,"_three_combined.pdf"), width = 3, height = 3, units = "in", device='pdf')
+```
+
+
+# Figure 4
+## Figure 4B
+Heatmap of the validation screen
+```{r, FIG 4B}
+setwd()
+
+# Choose data
+df <- read.table("FIG_4B_Validation_dDSS_and_timing.csv",sep=",", header = TRUE)
+
+# Define drug names as rows
+rownames(df) <- df$DRUG_NAME
+
+# Subset necessary dataframe
+df_m <- as.matrix(df[, 4:16])
+
+# Allocate colors to each sample
+colors = list(bar = c("HEK293" = "#009ACD","HEK293_IR_first" = "#009ACD", "CCD841" = "#009ACD", "BJTERT" = "#009ACD",
+                      "RMS444" = "#FAFA33", "RMS012" = "#FAFA33", "RMS007" = "#FFBF00","RMS006" = "#ff0000",
+                      "RMS410" = "#ff0000","RMS127" = "#ff0000", "RMS000HQC" = "#ff0000",
+                      "RMS102" = "#ff0000","RMS102_IR_first" = "#ff0000"))
+
+
+# Add row and column annotations
+row_ha = anno_mark(at = c(1:28), labels = df$Mechanism, which = "row")
+column_ha = HeatmapAnnotation(foo = c(0,0.2,0.2,1,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,1), bar = colnames(df_m), col = colors  )
+
+# Plot a heatmap
+pdf("FIG_4B_ComplexHeatmap_dDSS_validation.pdf", width = 10, height = 8)
+ht <- Heatmap(df_m,
+              cluster_rows=FALSE,
+              cluster_columns=FALSE,
+              col=colorRamp2(c(-15, 0, 15),c("blue", "white", "red")),
+              top_annotation = column_ha,
+              heatmap_legend_param = list(
+                legend_direction = "horizontal", 
+                legend_width = unit(5, "cm")
+              )
+) + 
+  rowAnnotation(mark = row_ha)
+
+draw(ht, auto_adjust = FALSE,heatmap_legend_side = "bottom")
+dev.off()
+```
+
+## Figure 4C
+Gene centric validation of DSS correlation with BCL2L1 and PLK1 - All tumoroids
+```{r, FIG 4C}
+setwd()
+
+# Choose data
+df <- read.table("Validation_Paired_Wilcoxon_BCL_PLK1_xL_long.csv",sep=",", header = TRUE)
+
+# Subset data into models and irradiation status
+df_RMS <- subset(df,Sample == "RMS")
+df_RMS_irr <- subset(df_RMS,Status == "Irradiated")
+df_RMS_NonIrr <- subset(df_RMS,Status == "NonIrr")
+
+# Perform a wilcoxon rank-sum test
+result_RMS = wilcox.test(df_RMS_NonIrr$DSS, df_RMS_irr$DSS, paired = TRUE)
+
+# State groups for comparison
+my_comparisons <- rev(list(c("NonIrr","Irradiated")))
+
+# Define data frame columns into correct types
+df_RMS$Status <- factor(df_RMS$Status, levels = c("NonIrr","Irradiated"))
+
+# Plot boxplots
+ggplot(df_RMS, aes(x=Status, y=DSS, fill = Status)) + 
+  geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+  scale_fill_brewer(palette="Dark2")+
+  geom_jitter(color="black", size=2, width = 0.2) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=TRUE) +
+  facet_wrap(~Gene,ncol=2) +
+  theme(axis.line = element_line(colour = "black"),legend.position="none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background = element_rect(fill = 'white')) 
+
+# Save plots
+ggsave(filename = "FIG_4C_paired_Wilcoxon_NB_all.pdf", width = 4, height = 2, units = "in", device='pdf')
+```
+
+## Figure 4D
+Gene centric validation of DSS correlation with BCL2L1 and PLK1 - Tumoroids in validation screen only
+```{r, FIG 4D}
+setwd()
+
+# Choose data
+df <- read.table("Validation_Paired_Wilcoxon_BCL_PLK1_xL_long.csv",sep=",", header = TRUE)
+
+# Subset data into models and irradiation status
+df_RMS <- subset(df,Sample == "RMS")
+df_RMS_irr <- subset(df_RMS,Status == "Irradiated")
+df_RMS_NonIrr <- subset(df_RMS,Status == "NonIrr")
+
+df_RMS_validation <- subset(df_RMS,First_screened == "Validation")
+df_RMS_validation_irr <- subset(df_RMS_validation,Status == "Irradiated")
+df_RMS_validation_NonIrr <- subset(df_RMS_validation,Status == "NonIrr")
+
+# Perform a wilcoxon rank-sum test
+result_RMS_validation = wilcox.test(df_RMS_validation_NonIrr$DSS, df_RMS_validation_irr$DSS, paired = TRUE)
+
+# State groups for comparison
+my_comparisons <- rev(list(c("NonIrr","Irradiated")))
+
+# Define data frame columns into correct types
+df_RMS_validation$Status <- factor(df_RMS_validation$Status, levels = c("NonIrr","Irradiated"))
+
+# Plot boxplots
+ggplot(df_RMS_validation, aes(x=Status, y=DSS, fill = Status)) + 
+  geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+  scale_fill_brewer(palette="Dark2")+
+  geom_jitter(color="black", size=2, width = 0.2) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=TRUE) +
+  facet_wrap(~Gene,ncol=2) +
+  theme(axis.line = element_line(colour = "black"),legend.position="none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background = element_rect(fill = 'white')) 
+
+# Save plots
+ggsave(filename = "FIG_4D_paired_Wilcoxon_NB_validation.pdf", width = 4, height = 2, units = "in", device='pdf')
+```
+
+## Figure 4E
+Gene centric validation of DSS correlation with BCL2L1 and PLK1 - All non-cancer models
+```{r, FIG 4E}
+setwd()
+
+# Choose data
+df <- read.table("Validation_Paired_Wilcoxon_BCL_PLK1_xL_long.csv",sep=",", header = TRUE)
+
+# Subset data into models and irradiation status
+df_control <- subset(df,Sample == "Control")
+df_control_irr <- subset(df_control,Status == "Irradiated")
+df_control_NonIrr <- subset(df_control,Status == "NonIrr")
+
+# Perform a wilcoxon rank-sum test
+result_control = wilcox.test(df_control_NonIrr$DSS, df_control_irr$DSS, paired = TRUE)
+
+# State groups for comparison
+my_comparisons <- rev(list(c("NonIrr","Irradiated")))
+
+# Define data frame columns into correct types
+df_control$Status <- factor(df_control$Status, levels = c("NonIrr","Irradiated"))
+
+# Plot boxplots
+ggplot(df_control, aes(x=Status, y=DSS, fill = Status)) + 
+  geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+  scale_fill_brewer(palette="Dark2")+
+  geom_jitter(color="black", size=2, width = 0.2) +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=TRUE) +
+  facet_wrap(~Gene,ncol=2) +
+  theme(axis.line = element_line(colour = "black"),legend.position="none",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background = element_rect(fill = 'white')) 
+
+# Save plots
+ggsave(filename = "FIG_4E_paired_Wilcoxon_control.pdf", width = 4, height = 2, units = "in", device='pdf')
+```
+
+## Figure 4F
+DSS Comparison between PAX3 fusion positive and negative tumoroids - KI models
+```{r, FIG 4F - Left}
+setwd()
+
+# Choose data
+df <- read.csv("FIG_S4E_BCL_XL_validation.csv", header = TRUE)
+
+# Rearrange dataset
+long <- melt(df, id.vars = c("Sample", "Screen", "Type","Radiation","Translocation","PAX3","Use","RNA"))
+long <- subset(long,Use == "Yes")
+
+# Define group comparisons
+my_comparisons <- rev(list(c("Yes","No")))
+
+# Plot a boxplot 
+ggplot(long, aes(x=PAX3, y=value)) + 
+          geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+          geom_jitter(aes(color = variable), size = 0.8, alpha = 0.9, width = 0.1) +
+          scale_color_manual(values = c(
+                    "Navitoclax" = "#6a3d9a",
+                    "A.1331852" = "#58b3db",  
+                    "WEHI.539" = "#dbb358"    
+          )) +
+          ylim(-2, 50) +
+          xlab("PAX3 Fusion") +
+          ylab("DSS") + 
+          ggtitle("KI Fusion") +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=FALSE, label.y = 45) +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_rect(fill = 'white'),
+        legend.position = "none") 
+
+# Save plot
+ggsave(filename = "FIG_4F_KI_Fusion_DSS_color.pdf", width = 2, height = 2, units = "in", device='pdf')
+```
+
+DSS Comparison between BCL2L1 high expression and low expression tumoroids - KI models
+```{r, FIG 4F - Right}
+setwd()
+
+# Choose data
+df <- read.csv("FIG_S4E_BCL_XL_validation.csv", header = TRUE)
+
+# Rearrange and group dataset
+long <- melt(df, id.vars = c("Sample", "Screen", "Type","Radiation","Translocation","PAX3","Use","RNA"))
+long <- subset(long,Use == "Yes")
+long$RNA <- recode(long$RNA, "LOW" = "Low", "HIGH" = "High")
+long$RNA <- factor(long$RNA, levels = c("Low", "High"))
+
+# Define group comparisons
+my_comparisons <- rev(list(c("High","Low")))
+
+# Plot a boxplot
+ggplot(long, aes(x=RNA, y=value)) + 
+          geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+          geom_jitter(aes(color = variable), size = 0.8, alpha = 0.9, width = 0.1) +
+          scale_color_manual(values = c(
+                    "Navitoclax" = "#6a3d9a",
+                    "A.1331852" = "#58b3db",  
+                    "WEHI.539" = "#dbb358"    
+          )) +
+          ylim(-2, 50) +
+          xlab(expression(italic("BCL2L1") ~ "RNA Expression")) +
+          ylab("DSS") + 
+          ggtitle("KI RNA") +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=FALSE, label.y = 45) +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_rect(fill = 'white'),
+        legend.position = "none") 
+
+# Save plot
+ggsave(filename = "SP_Figures/FIG_4F_KI_RNA_DSS_color.pdf", width = 2, height = 2, units = "in", device='pdf')
+```
+
+## Figure 4G
+DSS Comparison between PAX3 fusion positive and negative tumoroids - PMC Models
+```{r, FIG 4G - Left}
+setwd()
+
+# Choose data
+df <- read.csv("FIG_S4F_PMC_Navitoclax_fusionDSS.csv", header = TRUE)
+
+# Select data from PMC
+df <- subset(df,Sample == "PMC")
+
+# Define groups for comparison
+my_comparisons <- rev(list(c("Yes","No")))
+
+# Plot a boxplot
+ggplot(df, aes(x=PAX3_FP, y=Navitoclax)) + 
+          geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+          geom_jitter(color = "#6a3d9a", size = 0.8, alpha = 0.9, width = 0.1) +
+          ylim(-2, 50) +
+          xlab("PAX3 Fusion") +
+          ylab("DSS") +
+          ggtitle("PMC Fusion") +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=FALSE) + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_rect(fill = 'white'))
+
+# Save plot
+ggsave(filename = "FIG_4G_PMC_Navitoclax_fusionDSS_color.pdf", width = 2, height = 2, units = "in", device='pdf')
+```
+
+
+DSS Comparison between BCL2L1 high expression and low expression tumoroids - PMC models
+```{r, FIG 4G - Right}
+# Choose data
+df <- read.csv("FIG_S4F_PMC_Navitoclax_RNA.csv", header = TRUE)
+
+# Subset data from PMC
+df <- subset(df,Sample == "PMC")
+
+# Rearrange and group data
+df$RNA <- recode(df$RNA, "LOW" = "Low", "HIGH" = "High")
+df$RNA <- factor(df$RNA, levels = c("Low", "High"))
+
+# Define groups for comparisons
+my_comparisons <- rev(list(c("High","Low")))
+
+# Plot a boxplot
+ggplot(df, aes(x=RNA, y=Navitoclax)) + 
+          geom_boxplot(outlier.shape = NA, position=position_dodge(1)) +
+          geom_jitter(color = "#6a3d9a", size = 0.8, alpha = 0.9, width = 0.1) +
+          ylim(-2, 50) +
+          xlab(expression(italic("BCL2L1") ~ "RNA Expression")) +
+          ylab("DSS") +
+          ggtitle("PMC RNA") +
+  stat_compare_means(comparisons = my_comparisons, method = "wilcox.test",paired=FALSE) + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_rect(fill = 'white')) 
+
+# Save plot
+ggsave(filename = "FIG_4G_PMC_Navitoclax_RNA_DSS_color.pdf", width = 2, height = 2, units = "in", device='pdf')
+```
+
+# Figure 5
+## Figure 5A
+Longterm radiosensitization heatmap
+```{r, FIG 5A}
+setwd()
+
+# Choose the data
+df <- read_excel("FIG_5A_Validation_longterm.xlsx")
+
+# Extract only relevant dataframe
+df_m <- as.matrix(df[, 6:16])
+
+# Set the drugs to be the row names
+rownames(df_m) <- df$DRUG_NAME
+
+# Define colors for each model and treatment duration
+colors = list(bar = c("RMS102_P" = "#cad59a",
+                      "RMS102_V" = "#ff8886",
+                      "RMS102_96" = "#d4b58c",
+                      "RMS102_168" = "#b3966f",
+                      "RMS006_P" = "#cad59a",
+                      "RMS006_V" = "#ff8886",
+                      "RMS006_96" = "#d4b58c", 
+                      "RMS006_168" = "#b3966f",
+                      "BJTERT_V" = "#ff8886",
+                      "BJTERT_96" = "#d4b58c", 
+                      "BJTERT_168" = "#b3966f"))
+
+# Annotate the rows and columns
+row_ha = anno_mark(at = c(1:4), labels = df$Mechanism, which = "row")
+column_ha = HeatmapAnnotation(Screen = c("Tumoroids","Tumoroids","Tumoroids","Tumoroids","Tumoroids","Tumoroids","Tumoroids","Tumoroids", "Non-cancer", "Non-cancer", "Non-cancer"), bar = colnames(df_m), col = colors)
+
+# Plot the heatmap
+pdf("FIG_5A_Longterm_dDSS_validation.pdf", width = 8, height = 4)
+ht <- Heatmap(df_m,
+              cluster_rows=FALSE,
+              cluster_columns=FALSE,
+              col=colorRamp2(c(-35, 0, 35),c("blue", "white", "red")),
+              top_annotation = column_ha,
+              heatmap_legend_param = list(
+                legend_direction = "horizontal", 
+                legend_width = unit(5, "cm")
+              )
+) + 
+  rowAnnotation(mark = row_ha)
+
+draw(ht, auto_adjust = FALSE,heatmap_legend_side = "bottom")
+dev.off()
+```
+
+## Figure 5C
+Dose Response Curves for Longterm Sensitization - A-1331852
+```{r, FIG 5C}
+setwd()
+
+# Choose the data
+data <- "FIG_S5A_Validation_longterm_Curves.xlsx"
+
+# Choose drug of Interest
+drug <-"A-1331852"
+
+# Choose timepoint for RMS102 - 96H
+df_102_96 <- read_excel(data, sheet = "RMS102_96H")
+df_102_96_EBRT <- read_excel(data, sheet = "RMS102_96H_IRR")
+df_102_96_drug <- subset(df_102_96, DRUG_NAME == drug)
+df_102_96_EBRT_drug <- subset(df_102_96_EBRT, DRUG_NAME == drug)
+df_102_96_drug$Irradiated <- "no"
+df_102_96_EBRT_drug$Irradiated <- "yes"
+df_102_96_drug$RMS <- "RMS102"
+df_102_96_EBRT_drug$RMS <- "RMS102"
+df_102_96_drug$Time <- "96H"
+df_102_96_EBRT_drug$Time <- "96H"
+EC50_102_96 <- df_102_96_drug$EC50
+EC50_102_96_EBRT <- df_102_96_EBRT_drug$EC50
+
+# Choose timepoint for RMS102 - 168H
+df_102_168 <- read_excel(data, sheet = "RMS102_168H")
+df_102_168_EBRT <- read_excel(data, sheet = "RMS102_168H_IRR")
+df_102_168_drug <- subset(df_102_168, DRUG_NAME == drug)
+df_102_168_EBRT_drug <- subset(df_102_168_EBRT, DRUG_NAME == drug)
+df_102_168_drug$Irradiated <- "no"
+df_102_168_EBRT_drug$Irradiated <- "yes"
+df_102_168_drug$RMS <- "RMS102"
+df_102_168_EBRT_drug$RMS <- "RMS102"
+df_102_168_drug$Time <- "168H"
+df_102_168_EBRT_drug$Time <- "168H"
+EC50_102_168 <- df_102_168_drug$EC50
+EC50_102_168_EBRT <- df_102_168_EBRT_drug$EC50
+
+# Choose timepoint for RMS006 - 96H
+df_006_96 <- read_excel(data, sheet = "RMS006_96H")
+df_006_96_EBRT <- read_excel(data, sheet = "RMS006_96H_IRR")
+df_006_96_drug <- subset(df_006_96, DRUG_NAME == drug)
+df_006_96_EBRT_drug <- subset(df_006_96_EBRT, DRUG_NAME == drug)
+df_006_96_drug$Irradiated <- "no"
+df_006_96_EBRT_drug$Irradiated <- "yes"
+df_006_96_drug$RMS <- "RMS006"
+df_006_96_EBRT_drug$RMS <- "RMS006"
+df_006_96_drug$Time <- "96H"
+df_006_96_EBRT_drug$Time <- "96H"
+EC50_006_96 <- df_006_96_drug$EC50
+EC50_006_96_EBRT <- df_006_96_EBRT_drug$EC50
+
+# Choose timepoint for RMS006 - 168H
+df_006_168 <- read_excel(data, sheet = "RMS006_168H")
+df_006_168_EBRT <- read_excel(data, sheet = "RMS006_168H_IRR")
+df_006_168_drug <- subset(df_006_168, DRUG_NAME == drug)
+df_006_168_EBRT_drug <- subset(df_006_168_EBRT, DRUG_NAME == drug)
+df_006_168_drug$Irradiated <- "no"
+df_006_168_EBRT_drug$Irradiated <- "yes"
+df_006_168_drug$RMS <- "RMS006"
+df_006_168_EBRT_drug$RMS <- "RMS006"
+df_006_168_drug$Time <- "168H"
+df_006_168_EBRT_drug$Time <- "168H"
+EC50_006_168 <- df_006_168_drug$EC50
+EC50_006_168_EBRT <- df_006_168_EBRT_drug$EC50
+
+# Choose timepoint for BJhTERT - 96H
+df_BJTERT_96 <- read_excel(data, sheet = "BJTERT_96H")
+df_BJTERT_96_EBRT <- read_excel(data, sheet = "BJTERT_96H_IRR")
+df_BJTERT_96_drug <- subset(df_BJTERT_96, DRUG_NAME == drug)
+df_BJTERT_96_EBRT_drug <- subset(df_BJTERT_96_EBRT, DRUG_NAME == drug)
+df_BJTERT_96_drug$Irradiated <- "no"
+df_BJTERT_96_EBRT_drug$Irradiated <- "yes"
+df_BJTERT_96_drug$RMS <- "BJTERT"
+df_BJTERT_96_EBRT_drug$RMS <- "BJTERT"
+df_BJTERT_96_drug$Time <- "96H"
+df_BJTERT_96_EBRT_drug$Time <- "96H"
+EC50_BJTERT_96 <- df_BJTERT_96_drug$EC50
+EC50_BJTERT_96_EBRT <- df_BJTERT_96_EBRT_drug$EC50
+
+# Choose timepoint for BJhTERT - 168H
+df_BJTERT_168 <- read_excel(data, sheet = "BJTERT_168H")
+df_BJTERT_168_EBRT <- read_excel(data, sheet = "BJTERT_168H_IRR")
+df_BJTERT_168_drug <- subset(df_BJTERT_168, DRUG_NAME == drug)
+df_BJTERT_168_EBRT_drug <- subset(df_BJTERT_168_EBRT, DRUG_NAME == drug)
+df_BJTERT_168_drug$Irradiated <- "no"
+df_BJTERT_168_EBRT_drug$Irradiated <- "yes"
+df_BJTERT_168_drug$RMS <- "BJTERT"
+df_BJTERT_168_EBRT_drug$RMS <- "BJTERT"
+df_BJTERT_168_drug$Time <- "168H"
+df_BJTERT_168_EBRT_drug$Time <- "168H"
+EC50_BJTERT_168 <- df_BJTERT_168_drug$EC50
+EC50_BJTERT_168_EBRT <- df_BJTERT_168_EBRT_drug$EC50
+
+# Choose a representative data frame
+df_drug <- df_102_96_drug
+
+# Combine all data
+comb <- rbind(df_102_168_drug, 
+              df_102_168_EBRT_drug, 
+              df_102_96_drug, 
+              df_102_96_EBRT_drug, 
+              df_006_168_drug, 
+              df_006_168_EBRT_drug, 
+              df_006_96_drug, 
+              df_006_96_EBRT_drug,
+              df_BJTERT_168_drug,
+              df_BJTERT_168_EBRT_drug,
+              df_BJTERT_96_drug, 
+              df_BJTERT_96_EBRT_drug)
+
+# Specify the columns to keep
+columns_to_keep <- c("ID", "DRUG_NAME", "ANALYSIS_NAME", "EC50", "SLOPE", 
+                     "MAX", "MIN", "Min.Conc.tested", "Max.Conc.tested", 
+                     "EC50_std_error","D1", "D2", "D3", "D4", "D5", "Irradiated", "RMS", "Time")
+
+# Subset the data to keep only the specified columns
+comb <- comb[, columns_to_keep]
+
+# Reformat the data
+long_comb <- melt(setDT(comb), id.vars = c("ID","DRUG_NAME","ANALYSIS_NAME","EC50","SLOPE","MAX","MIN",
+                                           "Min.Conc.tested","Max.Conc.tested","EC50_std_error","Irradiated","RMS", "Time"), variable.name = "Viability")
+
+# Add the concentration of the compound
+long_comb$concentration <- c(
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1, 
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*1,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*10,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*100,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*1000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000,
+                             df_drug$Min.Conc.tested*10000)
+
+# Ensure Time and Model is a factor with the desired order
+long_comb$Time <- factor(long_comb$Time, levels = c("96H", "168H"))
+long_comb$RMS <- factor(long_comb$RMS, levels = c("RMS006", "RMS102", "BJTERT"))
+
+# Plot the dose reponse curves
+ggplot(data = long_comb, aes(x = concentration, y = value, col = Irradiated)) + 
+  geom_smooth(method = drm, method.args = list(fct = L.4()), se = FALSE, size = 1.5) +
+  geom_point(size=1.5) +
+  scale_color_manual(values=c("yes"="blue","no"="red"))+
+  #ylim(-5, 190) +
+  
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS006" & Time == "96H"), aes(xintercept=EC50_006_96),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS006" & Time == "96H"), aes(xintercept=EC50_006_96_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS006" & Time == "168H"), aes(xintercept=EC50_006_168),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS006" & Time == "168H"), aes(xintercept=EC50_006_168_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS102" & Time == "96H"), aes(xintercept=EC50_102_96),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS102" & Time == "96H"), aes(xintercept=EC50_102_96_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS102" & Time == "168H"), aes(xintercept=EC50_102_168),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="RMS102" & Time == "168H"), aes(xintercept=EC50_102_168_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="BJTERT" & Time == "96H"), aes(xintercept=EC50_BJTERT_96),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="BJTERT" & Time == "96H"), aes(xintercept=EC50_BJTERT_96_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="BJTERT" & Time == "168H"), aes(xintercept=EC50_BJTERT_168),linetype="dotted", colour="red", linewidth = 1) + 
+  geom_vline(data=subset(long_comb, long_comb$RMS=="BJTERT" & Time == "168H"), aes(xintercept=EC50_BJTERT_168_EBRT),linetype="dotted", colour="blue", linewidth = 1) + 
+  
+ scale_x_log10(breaks = c(0.1, 1, 10, 100, 1000, 10000), labels = c("0.1", "1", "10", "100", "1000", "10000")) +
+          
+          theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10),
+        axis.line.x = element_line(linewidth = 0.5),
+        axis.line.y = element_line(linewidth = 0.5),
+        panel.background = element_rect(fill = 'white'),
+        legend.position = "none")+
+          facet_grid(RMS ~ Time, scales = "free_y") +
+          scale_y_continuous(limits = function(limits) {
+                    c(-10, max(100, limits[2]))
+          })
+
+# Save the plot
+ggsave(filename = paste0("FIG_S5A_Drug_curve_EBRT_",drug,"_vertical_EC50_ALL.pdf"), width = 4, height = 4, units = "in", device='pdf')
+
+dev.off()
+```
+
+## Figure 5D
+Survival fraction bar graph for colony formation assay
+```{r, FIG 5D}
+setwd()
+
+# Choose the data
+df <- read_excel("RMS_EBRT_CFA_R.xlsx")
+
+# Define the sample
+sample <- "RMS000HQC"
+
+# Convert columns to correct types
+df$Drug <- as.factor(df$Drug)
+df$Gy <- as.numeric(as.character(df$Gy))
+
+# Summarize mean and SD for each Gy and Drug
+df_summary <- df %>%
+  dplyr::mutate(Gy = factor(Gy)) %>%
+  dplyr::group_by(Gy, Drug) %>%
+  dplyr::summarise(
+    Survival_mean = mean(Survival, na.rm = TRUE),
+    Survival_sd = sd(Survival, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# One-way ANOVA per Gy group
+anova_results <- df %>%
+  dplyr::group_by(Gy) %>%
+  anova_test(Survival ~ Drug) %>%
+  adjust_pvalue(method = "bonferroni")
+
+# Filter only relevant comparisons against 0nM
+posthoc <- df %>%
+  group_by(Gy) %>%
+  tukey_hsd(Survival ~ Drug) %>%
+  filter(group1 == "0" | group2 == "0")  
+
+# Custom vertical positions for significance symbols (avoid overlap)
+posthoc_bar <- posthoc %>%
+  mutate(
+    comparison = paste0(group1, "_vs_", group2),
+    y.position = case_when(
+      Gy == "0" & comparison == "0_vs_1000" ~ 1.2,
+      Gy == "0" & comparison == "0_vs_10"   ~ 1.1,
+      Gy == "0" & comparison == "0_vs_0.1"  ~ 1.05,
+
+      Gy == "2" & comparison == "0_vs_1000" ~ 0.25,
+      Gy == "2" & comparison == "0_vs_10"   ~ 0.22,
+      Gy == "2" & comparison == "0_vs_0.1"  ~ 0.20,
+
+      Gy == "4" & comparison == "0_vs_1000" ~ 0.3,
+      Gy == "4" & comparison == "0_vs_10"   ~ 0.2,
+      Gy == "4" & comparison == "0_vs_0.1"  ~ 0.1,
+
+      Gy == "6" & comparison == "0_vs_1000" ~ 0.3,
+      Gy == "6" & comparison == "0_vs_10"   ~ 0.2,
+      Gy == "6" & comparison == "0_vs_0.1"  ~ 0.1,
+
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  filter(!is.na(y.position))  # Important: remove any rows where y.position is NA
+
+#Plot the bar graph
+ggplot(df_summary, aes(x = Drug, y = Survival_mean)) +
+  geom_col(aes(fill = factor(Drug)), width = 0.6) +
+  geom_errorbar(aes(ymin = Survival_mean - Survival_sd, ymax = Survival_mean + Survival_sd),
+                width = 0.2) +
+  facet_wrap(~ Gy, nrow = 1, labeller = as_labeller(c("0" = "0 Gy", "2" = "2 Gy", "4" = "4 Gy", "6" = "6 Gy"))) +
+  stat_pvalue_manual(
+    posthoc_bar,
+    label = "p.adj.signif",
+    tip.length = 0.01,
+    hide.ns = TRUE
+  ) +
+  labs(
+    title = paste0(sample),
+    x = "A-1331852 (nM)",
+    y = "Surviving Fraction"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "0" = "#78DB95",     # green
+      "0.1" = "#9C78DB",   # violet
+      "10" = "#BAA5C9",    # warm lavender
+      "1000" = "grey50"    # ash mauve
+    )
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    legend.position = "none"
+  )
+
+# Save plot
+ggsave(filename = paste0("FIG_5D_CFA_",sample,"_Bar.pdf"), width = 6, height = 3, units = "in", device='pdf')
+
+
+```
+
+## Figure 5E
+Box plot for tumoroid growth assay and one-way ANOVA for endpoint (day 17)
+```{r, FIG 5E}
+setwd()
+
+# Choose Data
+df <- read_xlsx("SFA analysis_round2_FIJI.xlsx")
+
+# Convert columns to correct types
+df$Drug <- as.factor(df$Drug)
+df$Gy <- as.factor(df$Gy)
+
+# Filter only for 0, 0.1, and 1 nM
+df_filtered <- df %>% filter(Drug %in% c("0", "0.1", "1"))
+
+# One-way ANOVA per Gy
+anova_results <- df_filtered %>%
+  group_by(Gy) %>%
+  anova_test(Fold ~ Drug)
+
+# Post-hoc Tukey HSD per Gy
+posthoc <- df_filtered %>%
+  group_by(Gy) %>%
+  tukey_hsd(Fold ~ Drug) %>%
+  filter(group1 == "0") %>%   # Only compare against 0 nM
+  add_y_position()
+
+# Plot a boxplot
+ggplot(df_filtered, aes(x = Drug, y = Fold)) +
+  geom_boxplot(alpha = 0.8, outlier.shape = NA) +
+  geom_jitter(width = 0.1, size = 1.5, alpha = 0.6, aes(color = Drug)) +
+  stat_pvalue_manual(
+    posthoc,
+    label = "p.adj.signif",
+    tip.length = 0.01,
+    hide.ns = TRUE
+  ) +
+  facet_wrap(~ Gy, labeller = as_labeller(gy_labels)) +  # consistent labelling
+  scale_fill_manual(values = c(
+    "1" = "#7895DB",  
+    "0.1" = "#9C78DB",
+    "0" = "#78DB95"
+  )) +
+  scale_color_manual(values = c(
+    "1" = "#7895DB",  
+    "0.1" = "#9C78DB",
+    "0" = "#78DB95"
+  )) +
+  labs(
+    x = "A-1331852 (nM)",
+    y = "Fold Growth"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),                # remove gridlines
+    axis.line = element_line(color = "black"),   # show axis lines
+    axis.ticks = element_line(color = "black"),  # show axis ticks
+    strip.text = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "bottom",
+    legend.title = element_blank()
+  )
+
+# Save plot
+ggsave(filename = "FIG_5E_TGA_RMS006.pdf", width = 6, height = 4, units = "in", device='pdf')
+```
+
